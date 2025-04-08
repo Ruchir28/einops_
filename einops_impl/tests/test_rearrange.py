@@ -12,10 +12,10 @@ def test_basic_ellipsis():
     result = rearrange(x, '... h w -> ... (h w)')
     assert_shapes_equal(result.shape, (2, 3, 1200))
     
-    # Test case 2: Single batch dimension
-    # x = np.random.rand(2, 30, 40)
-    # result = rearrange(x, '... h w -> ... (h w)')
-    # assert_shapes_equal(result.shape, (2, 1200))
+    #Test case 2: Single batch dimension
+    x = np.random.rand(2, 30, 40)
+    result = rearrange(x, '... h w -> ... (h w)')
+    assert_shapes_equal(result.shape, (2, 1200))
 
 def test_multiple_batch_dimensions():
     """Test handling of multiple batch dimensions"""
@@ -63,7 +63,7 @@ def test_ellipsis_validation():
     x = np.random.rand(2, 3, 30, 40)
     
     # Test case 1: Multiple ellipsis
-    with pytest.raises(ValueError, match="Pattern must contain at most one ellipsis"):
+    with pytest.raises(ValueError, match="Multiple ellipsis found in '... h ... w'. Only one '...' is allowed."):
         rearrange(x, '... h ... w -> ... (h w)')
     
     # Test case 2: Inconsistent ellipsis

@@ -2,7 +2,11 @@ from typing import List, Dict, Tuple, Set, Optional
 import re
 
 class Parser:
-    def __init__(self,pattern: str):
+    def __init__(self, pattern: str):
+        if pattern is None:
+            raise ValueError("Pattern cannot be None")
+        if not isinstance(pattern, str):
+            raise ValueError(f"Pattern must be a string, got {type(pattern).__name__}")
         self.pattern = pattern
         self.input_pattern = ''
         self.output_pattern = ''
@@ -13,19 +17,23 @@ class Parser:
         """Validate that pattern contains at most one ellipsis"""
         ellipsis_count = pattern.count('...')
         if ellipsis_count > 1:
-            raise ValueError("Pattern must contain at most one ellipsis")
+            raise ValueError(f"Multiple ellipsis found in '{pattern}'. Only one '...' is allowed.")
 
     def parse(self):
         if '->' not in self.pattern:
-            raise ValueError("Pattern must contain '->'")
+            raise ValueError("Invalid pattern: missing arrow '->'. Pattern must be in format 'input -> output'")
         
-        self.input_pattern, self.output_pattern = self.pattern.split('->')
+        parts = self.pattern.split('->')
+        if len(parts) > 2:
+            raise ValueError("Invalid pattern: multiple arrows '->' found. Pattern must contain exactly one arrow.")
+            
+        self.input_pattern, self.output_pattern = parts
 
-        self._validate_single_ellipsis(self.input_pattern)
-        self._validate_single_ellipsis(self.output_pattern)
+        self._validate_single_ellipsis(self.input_pattern.strip())
+        self._validate_single_ellipsis(self.output_pattern.strip())
 
-        input_axes = self._parse_expression(self.input_pattern)
-        output_axes = self._parse_expression(self.output_pattern)
+        input_axes = self._parse_expression(self.input_pattern.strip())
+        output_axes = self._parse_expression(self.output_pattern.strip())
 
         return input_axes, output_axes
     
@@ -41,7 +49,8 @@ class Parser:
             i += 1
             
         if count != 0:
-            raise ValueError("Unmatched parentheses in expression")
+            context = expression[max(0, start-10):min(len(expression), start+11)]
+            raise ValueError(f"Unmatched parentheses in expression near: '{context}'")
             
         return i
     
@@ -52,7 +61,6 @@ class Parser:
         if end is None:
             end = len(expression)
 
-
         while i < end:
             char = expression[i]
 
@@ -61,16 +69,16 @@ class Parser:
                 i += 3
                 continue
             elif char == '(':
-                j = self._find_matching_parenthesis(expression,i)
-
-                group_content = self._parse_expression(expression,i+1,j-1)
+                j = self._find_matching_parenthesis(expression, i)
+                group_content = self._parse_expression(expression, i+1, j-1)
+                
+                if not group_content:
+                    group_expr = expression[i:j]
+                    raise ValueError(f"Empty group found: '{group_expr}'")
 
                 group_name = f"group_{len(self.grouped_axes)}"
-
                 self.grouped_axes[group_name] = group_content
-
                 result.append(group_name)
-
                 i = j
             elif char.isalpha() or char.isdigit():
                 j = i
@@ -80,13 +88,12 @@ class Parser:
                 axis_name = expression[i:j]
                 self.axes_names.add(axis_name)
                 result.append(axis_name)
-
                 i = j
             elif char.isspace():
-                i+=1
-            
+                i += 1
             else:
-                raise ValueError(f"Invalid character in expression {char}")
+                context = expression[max(0, i-10):min(len(expression), i+11)]
+                raise ValueError(f"Invalid character '{char}' found near: '{context}'")
             
         return result
     

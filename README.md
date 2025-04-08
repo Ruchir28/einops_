@@ -30,7 +30,7 @@ The shape analyzer (`einops_impl/shape_analzer.py`):
 ### Operations
 
 Our operations module (`einops_impl/operations.py`) provides:
-- Core tensor manipulation operations (split, merge, transpose)
+- Core tensor manipulation operations (split, merge, transpose, expand)
 - Clean interfaces for implementing higher-level operations
 
 ### Rearrangement
@@ -41,6 +41,9 @@ The main `rearrange` function:
 - Maintains dimension consistency throughout transformations
 
 ## Installation
+## Installation
+
+Clone the repository
 
 To install the required dependencies:
 
@@ -59,7 +62,7 @@ x = np.random.rand(30, 3)
 result = rearrange(x, '(h w) c -> h w c', h=5)
 # result.shape == (5, 6, 3)
 
-# Enhanced nested pattern support (not available in original einops)
+# Enhanced nested pattern support
 x = np.random.rand(24, 5)
 result = rearrange(x, '((a b) c) d -> a (b (c d))', a=2, b=3, c=4)
 # result.shape == (2, 60)
@@ -85,10 +88,3 @@ pytest einops_impl/tests/test_parser.py
 # Run rearrange tests
 pytest einops_impl/tests/test_rearrange.py
 ```
-
-## Differences from Original Einops
-
-While our implementation is designed to be compatible with the original einops library, there are a few key differences:
-
-1. **Nested parentheses support**: We support multi-level nested parentheses, which is not supported in the original einops
-2. **Implementation approach**: Our implementation uses a different internal architecture while maintaining the same interface
