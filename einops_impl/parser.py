@@ -24,9 +24,6 @@ class Parser:
         self._validate_single_ellipsis(self.input_pattern)
         self._validate_single_ellipsis(self.output_pattern)
 
-
-        print(f"Debug input:{self.input_pattern} and output:{self.output_pattern}")
-
         input_axes = self._parse_expression(self.input_pattern)
         output_axes = self._parse_expression(self.output_pattern)
 

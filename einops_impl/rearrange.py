@@ -4,6 +4,16 @@ from .parser import Parser
 from .shape_analzer import ShapeAnalyzer
 from .operations import Operations
 
+
+def expand_group(group_name, grouped_axes):
+    expansion = []
+    for item in grouped_axes[group_name]:
+        if item in grouped_axes:
+            expansion.extend(expand_group(item, grouped_axes))
+        else:
+            expansion.append(item)
+    return expansion
+
 def rearrange(tensor: np.ndarray, pattern: str, **axis_lengths) -> np.ndarray:
     """
     Rearrange a tensor according to the given pattern.
@@ -48,7 +58,7 @@ def rearrange(tensor: np.ndarray, pattern: str, **axis_lengths) -> np.ndarray:
             curr_original_idx += ellipsis_dims
         elif axis in parser.grouped_axes:
             # Split grouped axes
-            group_axes = parser.grouped_axes[axis]
+            group_axes = expand_group(axis, parser.grouped_axes)
             sizes = tuple(axis_sizes[ax] for ax in group_axes)
             current = ops.split_axis(current, curr_original_idx, sizes)
             input_composition.extend(group_axes)
@@ -63,15 +73,13 @@ def rearrange(tensor: np.ndarray, pattern: str, **axis_lengths) -> np.ndarray:
         if axis == '...':
             output_composition.extend([f'...{i}' for i in range(len(axis_sizes['...']))])
         elif axis in parser.grouped_axes:
-            output_composition.extend(parser.grouped_axes[axis])
+            output_composition.extend(expand_group(axis, parser.grouped_axes))
         else:
             output_composition.append(axis)
 
     if len(input_composition) != len(output_composition):
         raise ValueError(f"Inconsistent number of dimensions")
-    
-    print(f"Debug: input_composition: {input_composition}, output_composition: {output_composition}")
-    
+        
     # process them for expansion
     for i, (in_axis, out_axis) in enumerate(zip(input_composition, output_composition)):
         # Skip ellipsis markers
@@ -96,9 +104,9 @@ def rearrange(tensor: np.ndarray, pattern: str, **axis_lengths) -> np.ndarray:
             final_shape.extend(axis_sizes['...'])
             i += len(axis_sizes['...'])
         elif axis in parser.grouped_axes:
-            size = np.prod([axis_sizes[ax] for ax in parser.grouped_axes[axis]])
+            size = np.prod([axis_sizes[ax] for ax in expand_group(axis, parser.grouped_axes)])
             final_shape.append(size)
-            i += len(parser.grouped_axes[axis])
+            i += len(expand_group(axis, parser.grouped_axes))
         else:
             final_shape.append(axis_sizes[axis])
             i += 1

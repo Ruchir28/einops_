@@ -123,5 +123,45 @@ def test_numeric_expansion():
     x = np.random.rand(2, 1, 3)
     result = rearrange(x,'a 1 c -> a b c', b=3)
     assert_shapes_equal(result.shape, (2, 3, 3))
+
+def test_nested_operations():
+    """Test nested grouping operations"""
+    # Test case 1: Complex nested grouping
+    x = np.random.rand(24, 5)
+    result = rearrange(x, '((a b) c) d -> a (b (c d))', a=2, b=3, c=4)
+    assert_shapes_equal(result.shape, (2, 60))
+
+def test_deeper_nesting():
+    """Test with deeper nesting levels"""
+    x = np.random.rand(24, 4)
+    result = rearrange(x, '(((a b) c) d) e -> a (b (c (d e)))', a=2, b=3, c=2, d=2)
+    assert_shapes_equal(result.shape, (2, 48))
+
+def test_complex_transformation():
+    # Complex rearrangement with ellipsis
+    x = np.random.rand(2, 3, 4, 5, 6)
+    result = rearrange(x, 'a b ... (e f) -> (a b) ... (e f)', f=2)
+    assert_shapes_equal(result.shape, (6, 4, 5, 6))
     
+    # Another complex case
+    x = np.random.rand(2, 3, 4, 5, 6)
+    result = rearrange(x, 'a b ... (e f) -> a ... (b e) f', f=2)
+    assert_shapes_equal(result.shape, (2, 4, 5, 9, 2))
+
+def test_multi_level_nesting():
+    """Test multi-level nested patterns"""
     
+    # Two-level nesting
+    x = np.random.rand(24, 10)
+    result = rearrange(x, '((a b) c) d -> (a (b c)) d', a=2, b=3, c=4)
+    assert_shapes_equal(result.shape, (24, 10))
+    
+    # Three-level nesting with reorganization
+    x = np.random.rand(60, 5)
+    result = rearrange(x, '(((a b) c) d) e -> a b (c (d e))', a=3, b=2, c=2, d=5)
+    assert_shapes_equal(result.shape, (3, 2, 50))
+    
+    # Nested pattern with ellipsis
+    x = np.random.rand(2, 3, 24, 5)
+    result = rearrange(x, '... ((a b) c) d -> ... a b (c d)', a=2, b=3, c=4)
+    assert_shapes_equal(result.shape, (2, 3, 2, 3, 20))
